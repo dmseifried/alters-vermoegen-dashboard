@@ -1,7 +1,7 @@
 [project]
 name = "alters-vermoegen-dashboard"
 version = "0.1.0"
-description = "Add your description here"
+description = "Dashboard zu internationalen Alters- und Vermögensverteilungen für die Datenvisualisierungsvorlesung."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -10,13 +10,6 @@ dependencies = [
     "pyarrow>=25.0.1",
     "streamlit>=1.63.0",
 ]
-
-[project.scripts]
-alters-vermoegen-dashboard = "alters_vermoegen_dashboard:main"
-
-[build-system]
-requires = ["uv_build>=0.12.11,<0.13.0"]
-build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
