@@ -5,6 +5,7 @@ description = "Dashboard zu internationalen Alters- und Vermögensverteilungen f
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "kaleido>=1.4.0",
     "pandas>=3.0.5",
     "plotly>=7.0.0",
     "pyarrow>=25.0.1",
