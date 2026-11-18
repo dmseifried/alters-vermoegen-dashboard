@@ -41,11 +41,13 @@ FARBEN_LAENDER = {
     "FR": OKABE_ITO["orange"],
     "US": OKABE_ITO["hellblau"],
     "DE": OKABE_ITO["blau"],
-    "IN": OKABE_ITO["rotorange"],
+    "IN": OKABE_ITO[
+        "grau"
+    ],  # 8 Länder, 7 lesbare Farben: Indien ist in keinem Chart Extremwert
     "CN": OKABE_ITO["gruen"],
     "JP": OKABE_ITO["schwarz"],
     "NE": OKABE_ITO["rosa"],
-    "ZA": OKABE_ITO["grau"],
+    "ZA": OKABE_ITO["rotorange"],
 }
 FARBE_MAENNER = OKABE_ITO["blau"]
 FARBE_FRAUEN = OKABE_ITO["orange"]
@@ -523,6 +525,7 @@ def top10_verlauf(
     d["top10_pct"] = d["top10"] * 100
     fig = go.Figure()
     endwerte = []
+    geschaetzt = {}  # Name -> ist der letzte Wert geschätzt (Qualität < 3)?
     ersatz = [f for f in OKABE_ITO.values() if f != OKABE_ITO["gelb"]]
     for i, iso2 in enumerate(iso2s):
         land = d[d["iso2"] == iso2]
@@ -533,12 +536,18 @@ def top10_verlauf(
         _linie_mit_qualitaet(fig, land, name, farbe, "top10_pct", ".1f", nur_belastbar)
         letzte = land.sort_values("jahr").iloc[-1]
         endwerte.append((letzte["top10_pct"], name, farbe))
+        geschaetzt[name] = bool(letzte["quality_top10"] < BELASTBAR)
 
     y_max = min(100, d["top10_pct"].max() * 1.08)
     y_min = max(0, d["top10_pct"].min() * 0.9)
     _endbeschriftung(fig, endwerte, x=d["jahr"].max(), y_spanne=y_max - y_min)
     spitze = max(endwerte)
     tief = min(endwerte)
+    # Geschätzte Werte im Titel kennzeichnen, damit sie nicht als Befund gelesen werden
+    n_geschaetzt = geschaetzt[tief[1]] + geschaetzt[spitze[1]]
+    kennzeichnung = {2: " — beide Werte geschätzt", 1: " — ein Wert geschätzt", 0: ""}[
+        n_geschaetzt
+    ]
     fig.update_xaxes(
         title="Jahr", range=[d["jahr"].min(), d["jahr"].max() + 7], dtick=10
     )
@@ -548,7 +557,7 @@ def top10_verlauf(
     return basis_layout(
         fig,
         titel=f"Die reichsten 10 % halten {de(tief[0], 0)} % ({tief[1]}) bis "
-        f"{de(spitze[0], 0)} % ({spitze[1]}) des Vermögens",
+        f"{de(spitze[0], 0)} % ({spitze[1]}) des Vermögens{kennzeichnung}",
         untertitel=f"Anteil am Netto-Privatvermögen, Erwachsene ab 20; {HINWEIS_BELASTBAR}",
         quelle=QUELLE_WID,
     )
@@ -584,6 +593,7 @@ def lorenzkurven(
         line={"color": GRAU_HELL, "width": 1.5}, hoverinfo="skip", showlegend=False,
     ))  # fmt: skip
     ginis = []
+    n_belastbar = 0
     ersatz = [f for f in OKABE_ITO.values() if f != OKABE_ITO["gelb"]]
     for i, iso2 in enumerate(iso2s):
         land = d[d["iso2"] == iso2].sort_values("dezil")
@@ -596,6 +606,7 @@ def lorenzkurven(
         name = namen.get(iso2, iso2)
         gini = gini_aus_dezilen(land["anteil"])
         ginis.append((gini, name, farbe))
+        n_belastbar += belastbar
         x = [0, *range(10, 101, 10)]
         y = [0, *(land["anteil"].cumsum() * 100)]
         fig.add_trace(go.Scatter(
@@ -619,26 +630,30 @@ def lorenzkurven(
         title="Kumulierter Vermögensanteil (%)", range=[-12, 100], dtick=20,
         scaleanchor="x", scaleratio=1, constrain="domain",
     )  # fmt: skip
+    # Legende unter dem Plot (der quadratische Plot lässt seitlich Leerraum,
+    # den eine seitliche Legende nur scheinbar füllt)
     fig.update_layout(
-        legend={
-            "x": 0.02,
-            "y": 0.98,
-            "xanchor": "left",
-            "yanchor": "top",
-            "bgcolor": "rgba(255,255,255,0.8)",
-        }
-    )
+        legend={"orientation": "h", "x": 0.5, "xanchor": "center", "y": -0.14,
+                "yanchor": "top"}
+    )  # fmt: skip
     fig.add_annotation(
         x=50, y=-9, text="unter 0: Nettoschulden der ärmsten Dezile", showarrow=False,
         font={"color": GRAU, "size": SCHRIFTGROESSE - 2}, xanchor="left",
     )  # fmt: skip
+    kennzeichnung = (
+        " — alle Werte geschätzt" if n_belastbar == 0
+        else f" — {len(ginis) - n_belastbar} von {len(ginis)} geschätzt" if n_belastbar < len(ginis)
+        else ""
+    )  # fmt: skip
     return basis_layout(
         fig,
         titel=f"{jahr}: Gini von {de(ginis[0][0], 2)} ({ginis[0][1]}) bis "
-        f"{de(ginis[-1][0], 2)} ({ginis[-1][1]})",
+        f"{de(ginis[-1][0], 2)} ({ginis[-1][1]}){kennzeichnung}",
         untertitel="Lorenzkurven aus Dezilanteilen am Netto-Privatvermögen; "
         + HINWEIS_BELASTBAR,
         quelle=QUELLE_WID,
+        fuss_abstand=175,
+        rand_unten=200,
     )
 
 
