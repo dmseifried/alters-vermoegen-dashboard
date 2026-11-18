@@ -1,6 +1,23 @@
+# Daten: Rohdaten (ca. 6,5 GB, Lizenz der Anbieter) und daraus erzeugte Dateien
 data/raw/
 data/processed/
+
+# Python
 .venv/
 __pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
 .ipynb_checkpoints/
+
+# Lokale Konfiguration und Geheimnisse
+.env
+.env.*
+.streamlit/secrets.toml
 CLAUDE.md
+.claude/
+
+# Editor und System
+.vscode/
+.idea/
+.DS_Store

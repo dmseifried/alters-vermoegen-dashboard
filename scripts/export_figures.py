@@ -8,15 +8,21 @@ Aufruf:  uv run python scripts/export_figures.py
 """
 
 import os
+import shutil
 import sys
 from pathlib import Path
 
 PROJEKT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJEKT))
 
-# kaleido braucht einen Chromium-Browser. Ohne installiertes Chrome nutzen wir
-# den Brave-Wrapper, sofern BROWSER_PATH nicht schon gesetzt ist.
-os.environ.setdefault("BROWSER_PATH", str(PROJEKT / "scripts" / "kaleido-browser.sh"))
+# kaleido braucht einen Chromium-Browser und findet Chrome/Chromium selbst.
+# Nur wenn keiner im PATH liegt, aber Flatpak da ist, nutzen wir den
+# Brave-Flatpak-Wrapper. Ein gesetztes BROWSER_PATH hat immer Vorrang.
+CHROMIUM = ["google-chrome", "google-chrome-stable", "chromium", "chromium-browser"]
+if not any(shutil.which(b) for b in CHROMIUM) and shutil.which("flatpak"):
+    os.environ.setdefault(
+        "BROWSER_PATH", str(PROJEKT / "scripts" / "kaleido-browser.sh")
+    )
 
 import pandas as pd
 
